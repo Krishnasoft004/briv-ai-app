@@ -32,7 +32,7 @@ def create_app():
         parsed_origin = urlparse(origin).hostname if origin else ""
         ALLOWED_ORIGINS = [
             "localhost",
-            "vercel.app"
+            ".vercel.app"
         ]
         if any(parsed_origin and parsed_origin.endswith(allowed) for allowed in ALLOWED_ORIGINS):
             response.headers["Access-Control-Allow-Origin"] = origin
