@@ -51,27 +51,16 @@ def create_app():
     #     )
 
     #     return response
-
-
-    ALLOWED_DOMAINS = [
-        "localhost",
-        ".vercel.app"
-    ]
-
     def is_allowed_origin(origin):
         if not origin:
             return False
-        try:
-            parsed = urlparse(origin)
-            hostname = parsed.hostname
-            for domain in ALLOWED_DOMAINS:
-                if domain.startswith(".") and hostname and hostname.endswith(domain):
-                    return True
-                if hostname == domain:
-                    return True
-            return False
-        except Exception:
-            return False
+        parsed = urlparse(origin)
+        hostname = parsed.hostname
+        return (
+            hostname == "briv-ai-app01.vercel.app" or  # production frontend
+            hostname.endswith(".vercel.app") or        # preview deployments
+            hostname == "localhost"
+        )
 
     @app.after_request
     def apply_cors_headers(response):
@@ -85,8 +74,10 @@ def create_app():
         return response
 
     @app.route("/api/<path:path>", methods=["OPTIONS"])
-    def handle_options(path):
-        return apply_cors_headers(jsonify({})), 200    
+    def handle_preflight(path):
+        return apply_cors_headers(jsonify({})), 200
+
+    
     # Database configuration
     DATABASE_URL = os.getenv('DATABASE_URL')
     JWT_SECRET = os.getenv('JWT_SECRET', 'your-secret-key-change-in-production')
