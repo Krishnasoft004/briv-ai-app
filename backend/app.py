@@ -53,23 +53,25 @@ def create_app():
     #     return response
 
 
-    ALLOWED_ORIGINS = [
-    "localhost",
-    ".vercel.app"
-]
+    ALLOWED_DOMAINS = [
+        "localhost",
+        ".vercel.app"
+    ]
 
     def is_allowed_origin(origin):
         if not origin:
             return False
-        parsed = urlparse(origin)
-        hostname = parsed.hostname
-        if hostname:
-            return any(
-                hostname == domain or hostname.endswith(domain.lstrip("."))
-                for domain in ALLOWED_ORIGINS
-            )
-        return False
-
+        try:
+            parsed = urlparse(origin)
+            hostname = parsed.hostname
+            for domain in ALLOWED_DOMAINS:
+                if domain.startswith(".") and hostname and hostname.endswith(domain):
+                    return True
+                if hostname == domain:
+                    return True
+            return False
+        except Exception:
+            return False
 
     @app.after_request
     def apply_cors_headers(response):
@@ -84,8 +86,7 @@ def create_app():
 
     @app.route("/api/<path:path>", methods=["OPTIONS"])
     def handle_options(path):
-        return apply_cors_headers(jsonify({})), 200
-    
+        return apply_cors_headers(jsonify({})), 200    
     # Database configuration
     DATABASE_URL = os.getenv('DATABASE_URL')
     JWT_SECRET = os.getenv('JWT_SECRET', 'your-secret-key-change-in-production')
