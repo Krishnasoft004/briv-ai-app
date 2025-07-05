@@ -1,7 +1,7 @@
 import { writeLog } from "./logger"
 
 // lib/ai-service.ts
-const HF_TOKEN = process.env.HF_TOKEN;
+const HF_API_TOKEN = process.env.HF_API_TOKEN;
 const HF_API_URL = "https://api-inference.huggingface.co/models/google/gemma-2-2b"
 
 async function callHuggingFaceAPI(prompt: string, maxLength = 500) {
