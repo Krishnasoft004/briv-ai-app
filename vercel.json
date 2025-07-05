@@ -1,0 +1,10 @@
+{
+  // Build with Node 20 and use npm instead of Bun
+  "build": {
+    "env": {
+      "NODE_VERSION": "20"
+    }
+  },
+  // Force npm (and skip optional deps) during “Install” step
+  "installCommand": "npm install --no-optional"
+}
