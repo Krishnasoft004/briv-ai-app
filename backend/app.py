@@ -20,10 +20,38 @@ def create_app():
     # Configure CORS
     #CORS(app, origins=["http://localhost:3000", "https://*.vercel.app"])
     # === ✅ Dynamic CORS Setup ===
-    ALLOWED_ORIGINS = [
-        "http://localhost:3000",
-        ".vercel.app"
-    ]
+    # ALLOWED_ORIGINS = [
+    #     "http://localhost:3000",
+    #     ".vercel.app"
+    # ]
+
+    @app.after_request
+    def apply_combined_after_request(response):
+        # --- CORS Handling ---
+        origin = request.headers.get("Origin")
+        parsed_origin = urlparse(origin).hostname if origin else ""
+        ALLOWED_ORIGINS = [
+            "localhost",
+            "vercel.app"
+        ]
+        if any(parsed_origin and parsed_origin.endswith(allowed) for allowed in ALLOWED_ORIGINS):
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+            response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+            response.headers["Vary"] = "Origin"
+
+        # --- Request Logging ---
+        duration = time.time() - getattr(request, 'start_time', time.time())
+        logger.log_request(
+            method=request.method,
+            endpoint=request.path,
+            status_code=response.status_code,
+            duration=duration
+        )
+
+        return response
+
 
     def is_allowed_origin(origin):
         if not origin:
@@ -158,17 +186,7 @@ def create_app():
             'user_agent': request.headers.get('User-Agent', 'Unknown')
         })
     
-    @app.after_request
-    def log_response_info(response):
-        duration = time.time() - getattr(request, 'start_time', time.time())
-        logger.log_request(
-            method=request.method,
-            endpoint=request.path,
-            status_code=response.status_code,
-            duration=duration
-        )
-        return response
-    
+
     # Helper functions
     def hash_password(password):
         return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
