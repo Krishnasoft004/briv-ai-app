@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { verifyToken } from "@/lib/auth"
-import { query } from "@/lib/db"
+import { createAssessment } from "@/lib/db"
 import { writeLog } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
@@ -18,17 +18,16 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const result = await query(
-        `INSERT INTO assessments (user_id, reflection_id, questions, answers, score, created_at)
-         VALUES ($1, $2, $3, $4, $5, NOW())
-         RETURNING id, score, created_at`,
-        [user.user_id, reflection_id, JSON.stringify(questions), JSON.stringify(answers), score],
-      )
-
-      const assessment = result.rows[0]
+      const assessment = await createAssessment({
+        user_id: user.userId,
+        reflection_id,
+        questions,
+        answers,
+        score,
+      })
 
       await writeLog("api", "info", "Assessment completed", {
-        user_id: user.user_id,
+        user_id: user.userId,
         reflection_id,
         assessment_id: assessment.id,
         score,
@@ -40,7 +39,7 @@ export async function POST(request: NextRequest) {
       })
     } catch (dbError) {
       await writeLog("api", "error", "Database error saving assessment", {
-        user_id: user.user_id,
+        user_id: user.userId,
         reflection_id,
         error: dbError instanceof Error ? dbError.message : "Unknown error",
       })
