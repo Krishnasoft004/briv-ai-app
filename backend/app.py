@@ -10,7 +10,7 @@ from psycopg2.extras import RealDictCursor
 import bcrypt
 import jwt
 from logger import logger
-
+from urllib.parse import urlparse
 # Load environment variables
 load_dotenv()
 
@@ -18,7 +18,39 @@ def create_app():
     app = Flask(__name__)
     
     # Configure CORS
-    CORS(app, origins=["http://localhost:3000", "https://*.vercel.app"])
+    #CORS(app, origins=["http://localhost:3000", "https://*.vercel.app"])
+    # === ✅ Dynamic CORS Setup ===
+    ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        ".vercel.app"
+    ]
+
+    def is_allowed_origin(origin):
+        if not origin:
+            return False
+        parsed = urlparse(origin)
+        for domain in ALLOWED_ORIGINS:
+            if domain.startswith("."):
+                if parsed.hostname and parsed.hostname.endswith(domain):
+                    return True
+            elif domain == origin:
+                return True
+        return False
+
+    @app.after_request
+    def apply_cors_headers(response):
+        origin = request.headers.get("Origin")
+        if is_allowed_origin(origin):
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+            response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+            response.headers["Vary"] = "Origin"
+        return response
+
+    @app.route("/api/<path:path>", methods=["OPTIONS"])
+    def handle_options(path):
+        return apply_cors_headers(jsonify({})), 200
     
     # Database configuration
     DATABASE_URL = os.getenv('DATABASE_URL')
