@@ -25,45 +25,51 @@ def create_app():
     #     ".vercel.app"
     # ]
 
-    @app.after_request
-    def apply_combined_after_request(response):
-        # --- CORS Handling ---
-        origin = request.headers.get("Origin")
-        parsed_origin = urlparse(origin).hostname if origin else ""
-        ALLOWED_ORIGINS = [
-            "localhost",
-            ".vercel.app"
-        ]
-        if any(parsed_origin and parsed_origin.endswith(allowed) for allowed in ALLOWED_ORIGINS):
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
-            response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
-            response.headers["Vary"] = "Origin"
+    # @app.after_request
+    # def apply_combined_after_request(response):
+    #     # --- CORS Handling ---
+    #     origin = request.headers.get("Origin")
+    #     parsed_origin = urlparse(origin).hostname if origin else ""
+    #     ALLOWED_ORIGINS = [
+    #         "localhost",
+    #         ".vercel.app"
+    #     ]
+    #     if any(parsed_origin and parsed_origin.endswith(allowed) for allowed in ALLOWED_ORIGINS):
+    #         response.headers["Access-Control-Allow-Origin"] = origin
+    #         response.headers["Access-Control-Allow-Credentials"] = "true"
+    #         response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+    #         response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+    #         response.headers["Vary"] = "Origin"
 
-        # --- Request Logging ---
-        duration = time.time() - getattr(request, 'start_time', time.time())
-        logger.log_request(
-            method=request.method,
-            endpoint=request.path,
-            status_code=response.status_code,
-            duration=duration
-        )
+    #     # --- Request Logging ---
+    #     duration = time.time() - getattr(request, 'start_time', time.time())
+    #     logger.log_request(
+    #         method=request.method,
+    #         endpoint=request.path,
+    #         status_code=response.status_code,
+    #         duration=duration
+    #     )
 
-        return response
+    #     return response
 
+
+    ALLOWED_ORIGINS = [
+    "localhost",
+    ".vercel.app"
+]
 
     def is_allowed_origin(origin):
         if not origin:
             return False
         parsed = urlparse(origin)
-        for domain in ALLOWED_ORIGINS:
-            if domain.startswith("."):
-                if parsed.hostname and parsed.hostname.endswith(domain):
-                    return True
-            elif domain == origin:
-                return True
+        hostname = parsed.hostname
+        if hostname:
+            return any(
+                hostname == domain or hostname.endswith(domain.lstrip("."))
+                for domain in ALLOWED_ORIGINS
+            )
         return False
+
 
     @app.after_request
     def apply_cors_headers(response):
